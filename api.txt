@@ -1,0 +1,8 @@
+Get list of cities
+/cities
+["city1", "city2"]
+
+
+Get list of airports
+[
+
