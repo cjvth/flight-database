@@ -1,4 +1,9 @@
-from flask import Flask, abort
+import psycopg2.errors
+import sqlalchemy.exc
+from flask import Flask, abort, request, Response
+import json
+
+from sqlalchemy import func, text, insert
 
 from db import db_session
 from db.table import *
@@ -61,6 +66,29 @@ def inbound(airport):
         "arrival_time": i.scheduled_arrival,
         "days_of_week": i.days_of_week,
     } for i in a]
+
+
+@app.route('/check-in/', methods=['POST'])
+def check_in():
+    params = request.get_json()
+    engine = db_session.get_engine()
+    con = engine.connect()
+    seat = con.execute(text(
+        f"select * from get_free_seat(:ticket_no, :flight_id);"
+    ), params).first()[0]
+    boarding_no = con.execute(text(
+        f"select * from get_boarding_no(:flight_id);"
+    ), params).first()[0] or 1
+    stmt = insert(BoardingPasses).values(ticket_no=params['ticket_no'],
+                                         flight_id=params['flight_id'],
+                                         seat_no=seat,
+                                         boarding_no=boarding_no)
+    try:
+        con.execute(stmt)
+        con.commit()
+    except sqlalchemy.exc.IntegrityError as e:
+        return Response(str(e), status=409)
+    return Response("Checked-in", 201)
 
 
 if __name__ == '__main__':
