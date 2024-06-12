@@ -4,5 +4,16 @@ Get list of cities
 
 
 Get list of airports
-[
+/airports
+[{"city": i.city, "code": i.airport_code, "name": i.airport_name["en"]}]
 
+
+Get airports in city
+/airports/<city>
+[{"code": ..., "name": ...}]
+if none then 404
+
+
+List the outbound schedule for an airport:
+/outbound/<city>
+[{""

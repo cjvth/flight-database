@@ -4,15 +4,7 @@ from sqlalchemy import ARRAY, CHAR, CheckConstraint, Column, DateTime, ForeignKe
 from sqlalchemy.dialects.postgresql import INTERVAL, JSONB
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
 from sqlalchemy.orm.base import Mapped
-from geoalchemy2 import Geometry 
-
 from db.point import PostgresqlPoint
-
-class RawGeometry(Geometry): 
-    # This class is used to remove the ST_AsEWKB() function from select queries 
-    def column_expression(self, col): 
-        return col 
-        
 
 Base = declarative_base()
 metadata = Base.metadata
@@ -124,6 +116,19 @@ t_routes = Table(
     Column('duration', INTERVAL, comment='Scheduled duration of flight'),
     Column('days_of_week', ARRAY(Integer()), comment='Days of week on which flights are scheduled'),
     comment='Routes'
+)
+
+
+t_schedule_routes = Table(
+    'schedule_routes', metadata,
+    Column('flight_no', CHAR(6)),
+    Column('departure_airport', CHAR(3)),
+    Column('arrival_airport', CHAR(3)),
+    Column('aircraft_code', CHAR(3)),
+    Column('duration', INTERVAL),
+    Column('scheduled_departure', Text),
+    Column('scheduled_arrival', Text),
+    Column('days_of_week', ARRAY(Integer()))
 )
 
 
