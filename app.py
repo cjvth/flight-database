@@ -73,16 +73,24 @@ def check_in():
     params = request.get_json()
     engine = db_session.get_engine()
     con = engine.connect()
-    seat = con.execute(text(
-        f"select * from get_free_seat(:ticket_no, :flight_id);"
-    ), params).first()[0]
-    boarding_no = con.execute(text(
-        f"select * from get_boarding_no(:flight_id);"
-    ), params).first()[0] or 1
-    stmt = insert(BoardingPasses).values(ticket_no=params['ticket_no'],
-                                         flight_id=params['flight_id'],
-                                         seat_no=seat,
-                                         boarding_no=boarding_no)
+    try:
+        data = con.execute(text(
+            "select * from tickets where ticket_no=:ticket_no and book_ref=:book_ref and passenger_id=:passenger_id"
+        ), params).all()
+        if len(data) == 0:
+            return Response("Ticket with this data not found", status=401)
+        seat = con.execute(text(
+            f"select * from get_free_seat(:ticket_no, :flight_id);"
+        ), params).first()[0]
+        boarding_no = con.execute(text(
+            f"select * from get_boarding_no(:flight_id);"
+        ), params).first()[0] or 1
+        stmt = insert(BoardingPasses).values(ticket_no=params['ticket_no'],
+                                             flight_id=params['flight_id'],
+                                             seat_no=seat,
+                                             boarding_no=boarding_no)
+    except sqlalchemy.exc.StatementError as e:
+        return Response(str(e), status=400)
     try:
         con.execute(stmt)
         con.commit()
